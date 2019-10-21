@@ -3,7 +3,6 @@ let _ = require("lodash");
 const input = "input.csv";
 const output = "output.json";
 
-
 class FileManipulator {
   constructor() {
     this.content = this.readInput();
@@ -16,22 +15,35 @@ class FileManipulator {
     const resultString = JSON.stringify(result);
     fs.writeFileSync(output, resultString);
   }
-  parseToArray(){
+  parseToArray() {
     this.arrayContent = this.content.split("\r\n");
-    this.header = this.arrayContent[0].split(",");
-    this.arrayContent.shift();
+    this.createHeader();
     this.arrayContent = this.cleanArray(this.arrayContent);
+  }
+  createHeader() {
+    let firstline = this.arrayContent[0];
+    this.header = firstline.split(/(".*?"|,)/g);
+    this.header.forEach((value, index) => {
+      this.header[index] = value.replace(",", "");
+    });
+    this.header = this.header.filter(function(el) {
+      return el;
+    });
+
+    for (let inicio = 0; inicio <= 3; inicio++) {
+      this.header.shift();
+    }
+    console.log(this.header);
+    this.arrayContent.shift();
   }
   cleanArray(array) {
     let arrayContent = [];
-    array.forEach((value, index) => {
-      value = value.replace('"', "");
-      value = value.replace('"', "");
+    array.forEach(value => {
+      value = value.replace(/\"/, "");
       value = value.replace(" :)", "");
       let list = value.split(/[\/|,]+/);
       arrayContent.push(list);
     });
-    console.log(arrayContent);
     return arrayContent;
   }
 }
@@ -43,10 +55,22 @@ class aluno {
     this.classes = classes;
     this.addresses = addresses;
   }
-  updateAluno(classes, addresses){
-    this.classes.push(classes);
-    this.addresses.push(addresses);
-}
+
+  updateAluno(classes, addresses) {
+    classes.forEach(classe => {
+      this.addClasse(classe);
+    });
+    addresses.forEach(address => {
+      this.addAddress(address);
+    });
+  }
+
+  addAddress(address) {
+    this.addresses.push(address);
+  }
+  addClasse(classe) {
+    this.classes.push(classe);
+  }
 }
 
 class address {
@@ -60,14 +84,31 @@ class address {
 let file = new FileManipulator();
 file.parseToArray();
 
-address = new address("tomas.dalessandro@ibm.com", "mail", ['pai', 'responsavel']);
-classes = ['Class 2', 'Class 3', 'Class 4'];
-aluno = new aluno("John", 3222, classes, address);
+let alunos = [];
 
-alunos = [aluno, aluno];
+file.arrayContent.forEach(matricula => {
+  let name = matricula.shift();
+  let eid = matricula.shift();
+  let classes = _.remove(matricula, function(v) {
+    if (v.match("Sala ")) {
+      return v;
+    }
+  });
+  let addresses = [];
+  file.header.forEach((column, index) => {});
+  let isaluno = false;
+  alunos.forEach(aluno => {
+    if (eid == aluno.eid) {
+      isaluno = true;
+      aluno.updateAluno(classes, addresses);
+    }
+  });
+  if (!isaluno) {
+    let novoaluno = new aluno(name, eid, classes, addresses);
+    alunos.push(novoaluno);
+  }
+});
 
 console.log(alunos);
 
-
 // file.writeOutput(alunos);
-
