@@ -24,7 +24,8 @@ class FileManipulator {
     let firstline = this.arrayContent[0];
     this.header = firstline.split(/(".*?"|,)/g);
     this.header.forEach((value, index) => {
-      this.header[index] = value.replace(",", "");
+      value = value.replace(",", "");
+      this.header[index] = value.replace(/\"/g, "");
     });
     this.header = this.header.filter(function(el) {
       return el;
@@ -83,7 +84,6 @@ class address {
 
 let file = new FileManipulator();
 file.parseToArray();
-
 let alunos = [];
 
 file.arrayContent.forEach(matricula => {
@@ -95,7 +95,11 @@ file.arrayContent.forEach(matricula => {
     }
   });
   let addresses = [];
-  file.header.forEach((column, index) => {});
+  file.header.forEach((column, index) => {
+      possibletags = column.split(" ");
+      type = possibletags[0];
+
+  });
   let isaluno = false;
   alunos.forEach(aluno => {
     if (eid == aluno.eid) {
