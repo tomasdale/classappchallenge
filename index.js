@@ -1,5 +1,8 @@
 let fs = require("fs");
 let _ = require("lodash");
+const phoneUtil = require("google-libphonenumber").PhoneNumberUtil.getInstance();
+const PNF = require('google-libphonenumber').PhoneNumberFormat;
+let emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 const input = "input.csv";
 const output = "output.json";
 
@@ -50,11 +53,20 @@ class FileManipulator {
 }
 
 class aluno {
-  constructor(fullname, eid, classes, addresses) {
+  constructor(
+    fullname,
+    eid,
+    classes,
+    addresses,
+    invisible = false,
+    see_all = false
+  ) {
     this.fullname = fullname;
     this.eid = eid;
     this.classes = classes;
     this.addresses = addresses;
+    this.invisible = invisible;
+    this.see_all = see_all;
   }
 
   updateAluno(classes, addresses) {
@@ -75,8 +87,8 @@ class aluno {
 }
 
 class address {
-  constructor(adress, type, tags) {
-    this.adress = adress;
+  constructor(address, type, tags) {
+    this.address = address;
     this.type = type;
     this.tags = tags;
   }
@@ -87,19 +99,45 @@ file.parseToArray();
 let alunos = [];
 
 file.arrayContent.forEach(matricula => {
+  console.log(matricula);
   let name = matricula.shift();
   let eid = matricula.shift();
+
   let classes = _.remove(matricula, function(v) {
     if (v.match("Sala ")) {
       return v;
     }
   });
-  let addresses = [];
-  file.header.forEach((column, index) => {
-      possibletags = column.split(" ");
-      type = possibletags[0];
 
+  let addresses = [];
+  file.header.forEach(column => {
+    let lastaddress = matricula.shift();
+    let possibletags = column.split(" ");
+    possibletags.shift();
+    let type;
+    if (lastaddress) {
+      if (lastaddress.match(emailRegex)) {
+        type = "email";
+      } else {
+        try {
+          let number = phoneUtil.parseAndKeepRawInput(lastaddress, "BR");
+          if (phoneUtil.isValidNumberForRegion(number, "BR")) {
+            lastaddress = phoneUtil.format(
+              number,
+              PNF.E164
+            );
+            lastaddress = lastaddress.replace("+", "");
+            type = "phone";
+          }
+        } catch {}
+      }
+      if (type) {
+        let newaddress = new address(lastaddress, type, possibletags);
+        addresses.push(newaddress);
+      }
+    }
   });
+
   let isaluno = false;
   alunos.forEach(aluno => {
     if (eid == aluno.eid) {
@@ -113,6 +151,4 @@ file.arrayContent.forEach(matricula => {
   }
 });
 
-console.log(alunos);
-
-// file.writeOutput(alunos);
+file.writeOutput(alunos);
