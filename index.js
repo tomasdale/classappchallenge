@@ -161,7 +161,7 @@ function main() {
     let addresses = [];
     file.header.forEach(column => {
       let lastaddress = matricula.shift().split("/");
-      let possibletags = column.split(" ");
+      let possibletags = column.split(/[,][\s]|[\s]/);
       possibletags.shift();
       lastaddress.forEach(addr => {
         let address = createAddress(addr, possibletags);
